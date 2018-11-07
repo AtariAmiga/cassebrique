@@ -47,6 +47,23 @@ class Balle:
         if self.position_y > window_h or self.position_y < 0:
             self.vitesse_y = -self.vitesse_y
 
+
+class Raquette:
+    def __init__(self, largeur, largeur_fenetre, hauteur_fenetre):
+        self.position_x = int(largeur_fenetre/2)
+        self.position_y = int(hauteur_fenetre) - 10
+        self.largeur = largeur
+
+    def dessine(self, fenetre):
+        pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.position_x - self.largeur, self.position_y, self.largeur, 10])
+
+    def bouge_a_droite(self):
+        self.position_x += 20
+
+    def bouge_a_gauche(self):
+        self.position_x -= 20
+
+
 def game_loop():
     pygame.init()
 
@@ -63,11 +80,19 @@ def game_loop():
 
     balle = Balle(largeur_fenetre / 2, hauteur_fenetre / 2)
     mur = Mur(0, 0, 10, 3, 40, 20)
+
+    raquette = Raquette(largeur=50, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
+
     while tourne:
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT:
+                    raquette.bouge_a_droite()
+                if event.key == pygame.K_LEFT:
+                    raquette.bouge_a_gauche()
 
         balle.bouge(largeur_fenetre, hauteur_fenetre)
 
@@ -76,6 +101,7 @@ def game_loop():
 
         mur.dessine(fenetre)
         balle.dessine(fenetre)
+        raquette.dessine(fenetre=fenetre)
 
         pygame.display.update()
         horloge.tick(FPS)
