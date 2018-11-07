@@ -5,11 +5,11 @@ COULEUR_NOIR = (0, 0, 0)
 COULEUR_BLEUE = (50, 50, 255)
 
 class Brique:
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, largeur, hauteur):
         self.x = x
         self.y = y
-        self.largeur = width
-        self.hauteur = height
+        self.largeur = largeur
+        self.hauteur = hauteur
 
     def dessine(self, fenetre):
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
@@ -34,17 +34,17 @@ class Balle:
         self.position_y = int(y0)
         self.rayon = 10
 
-    def dessine(self, window):
-        pygame.draw.circle(window, COULEUR_NOIR, [self.position_x, self.position_y], self.rayon)
+    def dessine(self, fenetre):
+        pygame.draw.circle(fenetre, COULEUR_NOIR, [self.position_x, self.position_y], self.rayon)
 
-    def bouge(self, window_w, window_h):
+    def bouge(self, largeur_fenetre, hauteur_fenetre):
         self.position_x += self.vitesse_x
         self.position_y += self.vitesse_y
 
-        if self.position_x > window_w or self.position_x < 0:
+        if self.position_x > largeur_fenetre or self.position_x < 0:
             self.vitesse_x = -self.vitesse_x
 
-        if self.position_y > window_h or self.position_y < 0:
+        if self.position_y > hauteur_fenetre or self.position_y < 0:
             self.vitesse_y = -self.vitesse_y
 
 
@@ -63,6 +63,9 @@ class Raquette:
     def bouge_a_gauche(self):
         self.position_x -= 20
 
+class CasseBrique:
+    def __init__(self):
+        pass
 
 def game_loop():
     pygame.init()
@@ -99,8 +102,8 @@ def game_loop():
         # DRAW
         fenetre.fill(COULEUR_BLANC)
 
-        mur.dessine(fenetre)
-        balle.dessine(fenetre)
+        mur.dessine(fenetre=fenetre)
+        balle.dessine(fenetre=fenetre)
         raquette.dessine(fenetre=fenetre)
 
         pygame.display.update()
