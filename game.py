@@ -14,7 +14,10 @@ class Brique:
     def dessine(self, fenetre):
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
 
-class Mur:
+    def reagit_rebond_balle(self, objet):
+        return 1, 1
+
+class MurDeBriques:
     def __init__(self, x0, y0, nombre_x, nombre_y, largeur_brique, hauteur_brique):
         self.briques = []
         inter = 2
@@ -25,6 +28,14 @@ class Mur:
     def dessine(self, fenetre):
         for brique in self.briques:
             brique.dessine(fenetre)
+
+    def reagit_rebond_balle(self, balle):
+        for brique in self.briques:
+            x, y = brique.reagit_rebond_balle(balle)
+            if x != 1 or y !=1:
+                return x, y
+
+        return 1, 1
 
 class Balle:
     def __init__(self, x0, y0):
@@ -37,16 +48,14 @@ class Balle:
     def dessine(self, fenetre):
         pygame.draw.circle(fenetre, COULEUR_NOIR, [self.position_x, self.position_y], self.rayon)
 
-    def bouge(self, largeur_fenetre, hauteur_fenetre):
+    def bouge(self, objets_rebond:[]):
         self.position_x += self.vitesse_x
         self.position_y += self.vitesse_y
 
-        if self.position_x > largeur_fenetre or self.position_x < 0:
-            self.vitesse_x = -self.vitesse_x
-
-        if self.position_y > hauteur_fenetre or self.position_y < 0:
-            self.vitesse_y = -self.vitesse_y
-
+        for objet in objets_rebond:
+            cx, cy = objet.reagit_rebond_balle(self)
+            self.vitesse_x *= cx
+            self.vitesse_y *= cy
 
 class Raquette:
     def __init__(self, largeur, largeur_fenetre, hauteur_fenetre):
@@ -63,9 +72,19 @@ class Raquette:
     def bouge_a_gauche(self):
         self.position_x -= 20
 
-class CasseBrique:
-    def __init__(self):
-        pass
+class Terrain:
+    def __init__(self, x0, y0, largeur, hauteur):
+        self.y0 = y0
+        self.x0 = x0
+        self.largeur = largeur
+        self.hauteur = hauteur
+
+    def reagit_rebond_balle(self, objet):
+        x = -1 if objet.position_x > self.largeur or objet.position_x < self.x0 else 1
+        y = -1 if objet.position_y > self.hauteur or objet.position_y < self.x0 else 1
+        
+        return  x, y
+
 
 def game_loop():
     pygame.init()
@@ -82,9 +101,12 @@ def game_loop():
     tourne = True
 
     balle = Balle(largeur_fenetre / 2, hauteur_fenetre / 2)
-    mur = Mur(0, 0, 10, 3, 40, 20)
 
+    terrain = Terrain(0, 0, largeur_fenetre, hauteur_fenetre)
+    mur_de_briques = MurDeBriques(0, 0, 10, 3, 40, 20)
     raquette = Raquette(largeur=50, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
+
+    objets_rebond = [terrain, mur_de_briques] # todo: rajouter raquette
 
     while tourne:
         for event in pygame.event.get():
@@ -97,12 +119,12 @@ def game_loop():
                 if event.key == pygame.K_LEFT:
                     raquette.bouge_a_gauche()
 
-        balle.bouge(largeur_fenetre, hauteur_fenetre)
+        balle.bouge(objets_rebond)
 
         # DRAW
         fenetre.fill(COULEUR_BLANC)
 
-        mur.dessine(fenetre=fenetre)
+        mur_de_briques.dessine(fenetre=fenetre)
         balle.dessine(fenetre=fenetre)
         raquette.dessine(fenetre=fenetre)
 
