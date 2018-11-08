@@ -10,12 +10,25 @@ class Brique:
         self.y = y
         self.largeur = largeur
         self.hauteur = hauteur
+        self.est_cassee = False
 
     def dessine(self, fenetre):
-        pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
+        if not self.est_cassee:
+            pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
 
-    def reagit_rebond_balle(self, objet):
-        return 1, 1
+    def reagit_rebond_balle(self, balle):
+        if self.est_cassee:
+            return 1, 1
+
+        if self.x > balle.position_x or self.x + self.largeur < balle.position_x \
+            or self.y > balle.position_y or self.y + self.hauteur < balle.position_y:
+            return 1, 1
+
+        self.est_cassee = True
+        x = 1
+        y = 1
+
+        return x, y
 
 class MurDeBriques:
     def __init__(self, x0, y0, nombre_x, nombre_y, largeur_brique, hauteur_brique):
@@ -103,7 +116,7 @@ def game_loop():
     balle = Balle(largeur_fenetre / 2, hauteur_fenetre / 2)
 
     terrain = Terrain(0, 0, largeur_fenetre, hauteur_fenetre)
-    mur_de_briques = MurDeBriques(0, 0, 10, 3, 40, 20)
+    mur_de_briques = MurDeBriques(0, 0, 12, 4, 50, 30)
     raquette = Raquette(largeur=50, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
     objets_rebond = [terrain, mur_de_briques] # todo: rajouter raquette
