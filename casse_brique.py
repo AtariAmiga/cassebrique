@@ -23,6 +23,10 @@ class Balle(object):
         pass
 
     def bouge(self, terrain):
+        dt = 1
+        self.x = self.x + self.vx*dt
+        self.y = self.y + self.vy*dt
+
         pass
 
 class MoteurDeJeu(object):
