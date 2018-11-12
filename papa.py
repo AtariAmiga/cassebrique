@@ -106,51 +106,61 @@ class Terrain:
         
         return  cx, cy
 
+    def dessine(self, fenetre):
+        pass # todo: dessiner
 
-def game_loop():
-    pygame.init()
 
+class MoteurDeJeu(object):
+    def __init__(self, titre, largeur_fenetre, hauteur_fenetre):
+        pygame.init()
+
+        self.FPS = 120
+
+        self.fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
+        pygame.display.set_caption(titre)
+        self.horloge = pygame.time.Clock()
+
+    def fais_ton_travail(self, la_balle:Balle, la_raquette:Raquette, les_objets_de_rebond:[]):
+        le_jeu_tourne = True
+        while le_jeu_tourne:
+            tous_les_evenements = pygame.event.get()
+
+            for evenement in tous_les_evenements:
+                if evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
+                    pygame.quit()
+                    quit()
+                if evenement.type == pygame.KEYDOWN:
+                    if evenement.key == pygame.K_RIGHT:
+                        la_raquette.bouge_a_droite()
+                    if evenement.key == pygame.K_LEFT:
+                        la_raquette.bouge_a_gauche()
+
+            self.fenetre.fill(COULEUR_BLANC)
+
+            la_balle.bouge(les_objets_de_rebond)
+
+            la_balle.dessine(fenetre=self.fenetre)
+            for un_objet in les_objets_de_rebond:
+                un_objet.dessine(fenetre=self.fenetre)
+
+            pygame.display.update()
+            self.horloge.tick(self.FPS)
+
+
+def boucle_de_jeu():
     largeur_fenetre = 800
     hauteur_fenetre = 600
 
-    FPS = 120
+    le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
 
-    fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
-    pygame.display.set_caption("Jeu: ")
-    horloge = pygame.time.Clock()
+    la_balle = Balle(largeur_fenetre / 2, hauteur_fenetre / 2)
+    le_terrain = Terrain(0, 0, largeur_fenetre, hauteur_fenetre)
+    le_mur_de_briques = MurDeBriques(0, 0, 12, 4, 50, 30)
+    la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
-    le_jeu_tourne = True
+    les_objets_de_rebond = [le_terrain, le_mur_de_briques, la_raquette]
 
-    balle = Balle(largeur_fenetre / 2, hauteur_fenetre / 2)
-
-    terrain = Terrain(0, 0, largeur_fenetre, hauteur_fenetre)
-    mur_de_briques = MurDeBriques(0, 0, 12, 4, 50, 30)
-    raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
-
-    objets_de_rebond = [terrain, mur_de_briques, raquette]
-
-    while le_jeu_tourne:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
-                pygame.quit()
-                quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT:
-                    raquette.bouge_a_droite()
-                if event.key == pygame.K_LEFT:
-                    raquette.bouge_a_gauche()
-
-        balle.bouge(objets_de_rebond)
-
-        # DRAW
-        fenetre.fill(COULEUR_BLANC)
-
-        mur_de_briques.dessine(fenetre=fenetre)
-        balle.dessine(fenetre=fenetre)
-        raquette.dessine(fenetre=fenetre)
-
-        pygame.display.update()
-        horloge.tick(FPS)
+    le_moteur.fais_ton_travail(la_balle, la_raquette, les_objets_de_rebond)
 
 if __name__ == '__main__':
-    game_loop()
+    boucle_de_jeu()
