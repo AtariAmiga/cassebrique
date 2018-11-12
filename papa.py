@@ -8,6 +8,8 @@ class Brique:
     def __init__(self, x, y, largeur, hauteur):
         self.x = x
         self.y = y
+        self.x1 = x + largeur
+        self.y1 = y + hauteur
         self.largeur = largeur
         self.hauteur = hauteur
         self.est_cassee = False
@@ -17,40 +19,34 @@ class Brique:
             pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
 
     def reagit_rebond_balle(self, balle):
-        dt = 1
         if self.est_cassee:
             return 1, 1
 
         # Si la balle n'est pas arrivée dans la brique
-        if self.x > balle.x or self.x + self.largeur < balle.x \
-            or self.y > balle.y or self.y + self.hauteur < balle.y:
+        if balle.x < self.x or self.x1 < balle.x \
+            or balle.y < self.y or self.y1 < balle.y:
             return 1, 1
 
         # Si la balle est dans la brique
         self.est_cassee = True
 
         # Cherchons par quel côté elle est rentrée
-        cx = 1
-        cy = 1
-        if self.x > (balle.x - balle.vx*dt) or (self.x + self.largeur) > (balle.x - balle.vx*dt):
-            cy = -1
+        cvx = -1 if self.x > balle.x_precedent or self.x1 < balle.x_precedent else 1
+        cvy = -1 if self.y > balle.y_precedent or self.y1 < balle.y_precedent else 1
 
-        if self.y > (balle.y - balle.vy*dt) or (self.y + self.hauteur) > (balle.y - balle.vy*dt):
-            cx = -1
-
-        return cx, cy
+        return cvx, cvy
 
 class MurDeBriques:
-    def __init__(self, x0, y0, nombre_x, nombre_y, largeur_brique, hauteur_brique):
+    def __init__(self, x0, y0, nombre_x, nombre_y, largeur_une_brique, hauteur_une_brique):
         self.briques = []
         espacement = 2
         for i in range(nombre_x):
             for j in range(nombre_y):
                 self.briques.append(
-                    Brique( x0 + (largeur_brique + espacement) * i,
-                            y0 + (hauteur_brique + espacement) * j,
-                            largeur_brique,
-                            hauteur_brique))
+                    Brique(x0 + (largeur_une_brique + espacement) * i,
+                           y0 + (hauteur_une_brique + espacement) * j,
+                           largeur_une_brique,
+                           hauteur_une_brique))
 
     def dessine(self, fenetre):
         for brique in self.briques:
@@ -58,9 +54,9 @@ class MurDeBriques:
 
     def reagit_rebond_balle(self, balle):
         for brique in self.briques:
-            cx, cy = brique.reagit_rebond_balle(balle)
-            if cx != 1 or cy !=1:
-                return cx, cy
+            cvx, cvy = brique.reagit_rebond_balle(balle)
+            if cvx != 1 or cvy !=1:
+                return cvx, cvy
 
         return 1, 1
 
@@ -68,21 +64,28 @@ class Balle:
     def __init__(self, x0, y0):
         self.x = int(x0)
         self.y = int(y0)
-        self.vx = 1
-        self.vy = -1
+        self.x_precedent = self.x
+        self.y_precedent = self.y
+        self.vx = 2
+        self.vy = -2
         self.rayon = 10
 
     def dessine(self, fenetre):
         pygame.draw.circle(fenetre, COULEUR_NOIR, [self.x, self.y], self.rayon)
 
     def bouge(self, objets_rebond:[]):
-        self.x += self.vx
-        self.y += self.vy
+        dt = 1
+
+        self.x_precedent = self.x
+        self.y_precedent += self.y
+
+        self.x += self.vx*dt
+        self.y += self.vy*dt
 
         for objet in objets_rebond:
-            cx, cy = objet.reagit_rebond_balle(self)
-            self.vx *= cx
-            self.vy *= cy
+            cvx, cvy = objet.reagit_rebond_balle(self)
+            self.vx *= cvx
+            self.vy *= cvy
 
 class Raquette:
     def __init__(self, largeur, largeur_fenetre, hauteur_fenetre):
@@ -110,11 +113,11 @@ class Terrain:
         self.largeur = largeur
         self.hauteur = hauteur
 
-    def reagit_rebond_balle(self, objet):
-        cx = -1 if objet.x > self.largeur or objet.x < self.x0 else 1
-        cy = -1 if objet.y > self.hauteur or objet.y < self.x0 else 1
+    def reagit_rebond_balle(self, balle):
+        cvx = -1 if balle.x > self.largeur or balle.x < self.x0 else 1
+        cvy = -1 if balle.y > self.hauteur or balle.y < self.x0 else 1
         
-        return  cx, cy
+        return  cvx, cvy
 
     def dessine(self, fenetre):
         pass # todo: dessiner
