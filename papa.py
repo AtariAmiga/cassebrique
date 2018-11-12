@@ -17,16 +17,26 @@ class Brique:
             pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
 
     def reagit_rebond_balle(self, balle):
+        dt = 1
         if self.est_cassee:
             return 1, 1
 
-        if self.x > balle.position_x or self.x + self.largeur < balle.position_x \
-            or self.y > balle.position_y or self.y + self.hauteur < balle.position_y:
+        # Si la balle n'est pas arrivée dans la brique
+        if self.x > balle.x or self.x + self.largeur < balle.x \
+            or self.y > balle.y or self.y + self.hauteur < balle.y:
             return 1, 1
 
+        # Si la balle est dans la brique
         self.est_cassee = True
+
+        # Cherchons par quel côté elle est rentrée
         cx = 1
         cy = 1
+        if self.x > (balle.x - balle.vx*dt) or (self.x + self.largeur) > (balle.x - balle.vx*dt):
+            cy = -1
+
+        if self.y > (balle.y - balle.vy*dt) or (self.y + self.hauteur) > (balle.y - balle.vy*dt):
+            cx = -1
 
         return cx, cy
 
@@ -56,38 +66,38 @@ class MurDeBriques:
 
 class Balle:
     def __init__(self, x0, y0):
-        self.vitesse_x = 1
-        self.vitesse_y = 1
-        self.position_x = int(x0)
-        self.position_y = int(y0)
+        self.x = int(x0)
+        self.y = int(y0)
+        self.vx = 1
+        self.vy = -1
         self.rayon = 10
 
     def dessine(self, fenetre):
-        pygame.draw.circle(fenetre, COULEUR_NOIR, [self.position_x, self.position_y], self.rayon)
+        pygame.draw.circle(fenetre, COULEUR_NOIR, [self.x, self.y], self.rayon)
 
     def bouge(self, objets_rebond:[]):
-        self.position_x += self.vitesse_x
-        self.position_y += self.vitesse_y
+        self.x += self.vx
+        self.y += self.vy
 
         for objet in objets_rebond:
             cx, cy = objet.reagit_rebond_balle(self)
-            self.vitesse_x *= cx
-            self.vitesse_y *= cy
+            self.vx *= cx
+            self.vy *= cy
 
 class Raquette:
     def __init__(self, largeur, largeur_fenetre, hauteur_fenetre):
-        self.position_x = int(largeur_fenetre/2)
-        self.position_y = int(hauteur_fenetre) - 10
+        self.x = int(largeur_fenetre/2)
+        self.y = int(hauteur_fenetre) - 10
         self.largeur = largeur
 
     def dessine(self, fenetre):
-        pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.position_x - self.largeur, self.position_y, self.largeur, 10])
+        pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x - self.largeur, self.y, self.largeur, 10])
 
     def bouge_a_droite(self):
-        self.position_x += 20
+        self.x += 20
 
     def bouge_a_gauche(self):
-        self.position_x -= 20
+        self.x -= 20
 
     def reagit_rebond_balle(self, objet):
         return 1, 1 # todo: à faire
@@ -101,8 +111,8 @@ class Terrain:
         self.hauteur = hauteur
 
     def reagit_rebond_balle(self, objet):
-        cx = -1 if objet.position_x > self.largeur or objet.position_x < self.x0 else 1
-        cy = -1 if objet.position_y > self.hauteur or objet.position_y < self.x0 else 1
+        cx = -1 if objet.x > self.largeur or objet.x < self.x0 else 1
+        cy = -1 if objet.y > self.hauteur or objet.y < self.x0 else 1
         
         return  cx, cy
 
