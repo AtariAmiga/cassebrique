@@ -99,8 +99,14 @@ class Raquette:
     def dessine(self, fenetre):
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x - self.largeur, self.y, self.largeur, 10])
 
-    def reagit_rebond_balle(self, objet):
-        return 1, 1 # todo: à faire
+    def reagit_rebond_balle(self, balle):
+        if balle.y < self.y:
+            return 1, 1
+
+        if (self.x - self.largeur) <= balle.x and balle.x <= self.x:
+            return 1, -1
+
+        return 1, 1
 
     def bouge(self):
         self.x += self.vx
@@ -124,8 +130,11 @@ class Terrain:
 
     def reagit_rebond_balle(self, balle):
         cvx = -1 if balle.x > self.largeur or balle.x < self.x0 else 1
-        cvy = -1 if balle.y > self.hauteur or balle.y < self.x0 else 1
-        
+        cvy = -1 if balle.y < self.x0 else 1
+
+        if balle.y > self.hauteur:
+            balle.y = 300 # todo: implémenter balle sortie
+
         return  cvx, cvy
 
     def dessine(self, fenetre):
