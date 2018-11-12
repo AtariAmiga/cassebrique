@@ -14,7 +14,7 @@ class Brique:
         self.hauteur = hauteur
         self.est_cassee = False
 
-    def dessine(self, fenetre):
+    def dessine_toi(self, fenetre):
         if not self.est_cassee:
             pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
 
@@ -48,9 +48,9 @@ class MurDeBriques:
                            largeur_une_brique,
                            hauteur_une_brique))
 
-    def dessine(self, fenetre):
+    def dessine_toi(self, fenetre):
         for brique in self.briques:
-            brique.dessine(fenetre)
+            brique.dessine_toi(fenetre)
 
     def reagit_rebond_balle(self, balle):
         for brique in self.briques:
@@ -70,7 +70,7 @@ class Balle:
         self.vy = -0.4
         self.rayon = 10
 
-    def dessine(self, fenetre):
+    def dessine_toi(self, fenetre):
         pygame.draw.circle(fenetre, COULEUR_NOIR, [int(self.x), int(self.y)], self.rayon)
 
     def bouge(self, dt, objets_rebond:[]):
@@ -94,7 +94,7 @@ class Raquette:
         self.vx = 0
 
 
-    def dessine(self, fenetre):
+    def dessine_toi(self, fenetre):
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x - self.largeur, self.y, self.largeur, 10])
 
     def reagit_rebond_balle(self, balle):
@@ -135,7 +135,7 @@ class Terrain:
 
         return  cvx, cvy
 
-    def dessine(self, fenetre):
+    def dessine_toi(self, fenetre):
         pass # todo: dessiner
 
 
@@ -171,9 +171,9 @@ class MoteurDeJeu(object):
 
             la_balle.bouge(dt, les_objets_de_rebond)
 
-            la_balle.dessine(fenetre=self.fenetre)
+            la_balle.dessine_toi(fenetre=self.fenetre)
             for un_objet in les_objets_de_rebond:
-                un_objet.dessine(fenetre=self.fenetre)
+                un_objet.dessine_toi(fenetre=self.fenetre)
 
             pygame.display.update()
 
