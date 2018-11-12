@@ -93,17 +93,26 @@ class Raquette:
         self.y = int(hauteur_fenetre) - 10
         self.largeur = largeur
 
+        self.vx = 0
+
+
     def dessine(self, fenetre):
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x - self.largeur, self.y, self.largeur, 10])
 
-    def bouge_a_droite(self):
-        self.x += 5
-
-    def bouge_a_gauche(self):
-        self.x -= 5
-
     def reagit_rebond_balle(self, objet):
         return 1, 1 # todo: à faire
+
+    def bouge(self):
+        self.x += self.vx
+
+    def reagit_au_clavier(self, type, touche):
+        if type == pygame.KEYDOWN:
+            if touche == pygame.K_RIGHT: self.vx = 5
+            if touche == pygame.K_LEFT: self.vx = -5
+
+        elif type == pygame.KEYUP:
+            if touche == pygame.K_RIGHT: self.vx = 0
+            if touche == pygame.K_LEFT: self.vx = 0
 
 
 class Terrain:
@@ -135,8 +144,6 @@ class MoteurDeJeu(object):
 
     def fais_ton_travail(self, la_balle:Balle, la_raquette:Raquette, les_objets_de_rebond:[]):
         le_jeu_tourne = True
-        raquette_va_a_droite = False
-        raquette_va_a_gauche = False
 
         while le_jeu_tourne:
             tous_les_evenements = pygame.event.get()
@@ -145,17 +152,14 @@ class MoteurDeJeu(object):
                 if evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                     pygame.quit()
                     quit()
-                if evenement.type == pygame.KEYDOWN:
-                    if evenement.key == pygame.K_RIGHT: raquette_va_a_droite = True
-                    if evenement.key == pygame.K_LEFT: raquette_va_a_gauche = True
-                if evenement.type == pygame.KEYUP:
-                    if evenement.key == pygame.K_RIGHT: raquette_va_a_droite = False
-                    if evenement.key == pygame.K_LEFT: raquette_va_a_gauche = False
 
-            if raquette_va_a_droite: la_raquette.bouge_a_droite()
-            if raquette_va_a_gauche: la_raquette.bouge_a_gauche()
+                elif evenement.type in (pygame.KEYDOWN, pygame.KEYUP):
+                    la_raquette.reagit_au_clavier(evenement.type, evenement.key)
 
             self.fenetre.fill(COULEUR_BLANC)
+
+
+            la_raquette.bouge()
 
             la_balle.bouge(les_objets_de_rebond)
 
