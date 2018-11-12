@@ -97,10 +97,10 @@ class Raquette:
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x - self.largeur, self.y, self.largeur, 10])
 
     def bouge_a_droite(self):
-        self.x += 20
+        self.x += 5
 
     def bouge_a_gauche(self):
-        self.x -= 20
+        self.x -= 5
 
     def reagit_rebond_balle(self, objet):
         return 1, 1 # todo: à faire
@@ -135,6 +135,9 @@ class MoteurDeJeu(object):
 
     def fais_ton_travail(self, la_balle:Balle, la_raquette:Raquette, les_objets_de_rebond:[]):
         le_jeu_tourne = True
+        raquette_va_a_droite = False
+        raquette_va_a_gauche = False
+
         while le_jeu_tourne:
             tous_les_evenements = pygame.event.get()
 
@@ -143,10 +146,14 @@ class MoteurDeJeu(object):
                     pygame.quit()
                     quit()
                 if evenement.type == pygame.KEYDOWN:
-                    if evenement.key == pygame.K_RIGHT:
-                        la_raquette.bouge_a_droite()
-                    if evenement.key == pygame.K_LEFT:
-                        la_raquette.bouge_a_gauche()
+                    if evenement.key == pygame.K_RIGHT: raquette_va_a_droite = True
+                    if evenement.key == pygame.K_LEFT: raquette_va_a_gauche = True
+                if evenement.type == pygame.KEYUP:
+                    if evenement.key == pygame.K_RIGHT: raquette_va_a_droite = False
+                    if evenement.key == pygame.K_LEFT: raquette_va_a_gauche = False
+
+            if raquette_va_a_droite: la_raquette.bouge_a_droite()
+            if raquette_va_a_gauche: la_raquette.bouge_a_gauche()
 
             self.fenetre.fill(COULEUR_BLANC)
 
