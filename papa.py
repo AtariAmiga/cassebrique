@@ -66,16 +66,14 @@ class Balle:
         self.y = int(y0)
         self.x_precedent = self.x
         self.y_precedent = self.y
-        self.vx = 2
-        self.vy = -2
+        self.vx = 0.2
+        self.vy = -0.4
         self.rayon = 10
 
     def dessine(self, fenetre):
-        pygame.draw.circle(fenetre, COULEUR_NOIR, [self.x, self.y], self.rayon)
+        pygame.draw.circle(fenetre, COULEUR_NOIR, [int(self.x), int(self.y)], self.rayon)
 
-    def bouge(self, objets_rebond:[]):
-        dt = 1
-
+    def bouge(self, dt, objets_rebond:[]):
         self.x_precedent = self.x
         self.y_precedent += self.y
 
@@ -108,13 +106,13 @@ class Raquette:
 
         return 1, 1
 
-    def bouge(self):
-        self.x += self.vx
+    def bouge(self, dt):
+        self.x += self.vx*dt
 
     def reagit_au_clavier(self, type, touche):
         if type == pygame.KEYDOWN:
-            if touche == pygame.K_RIGHT: self.vx = 5
-            if touche == pygame.K_LEFT: self.vx = -5
+            if touche == pygame.K_RIGHT: self.vx = 1
+            if touche == pygame.K_LEFT: self.vx = -1
 
         elif type == pygame.KEYUP:
             if touche == pygame.K_RIGHT: self.vx = 0
@@ -155,6 +153,7 @@ class MoteurDeJeu(object):
         le_jeu_tourne = True
 
         while le_jeu_tourne:
+            dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
             tous_les_evenements = pygame.event.get()
 
             for evenement in tous_les_evenements:
@@ -168,16 +167,15 @@ class MoteurDeJeu(object):
             self.fenetre.fill(COULEUR_BLANC)
 
 
-            la_raquette.bouge()
+            la_raquette.bouge(dt)
 
-            la_balle.bouge(les_objets_de_rebond)
+            la_balle.bouge(dt, les_objets_de_rebond)
 
             la_balle.dessine(fenetre=self.fenetre)
             for un_objet in les_objets_de_rebond:
                 un_objet.dessine(fenetre=self.fenetre)
 
             pygame.display.update()
-            self.horloge.tick(self.FPS)
 
 
 def boucle_de_jeu():
