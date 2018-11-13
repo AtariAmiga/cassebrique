@@ -4,6 +4,8 @@ COULEUR_BLANC = (255, 255, 255)
 COULEUR_NOIR = (0, 0, 0)
 COULEUR_BLEUE = (50, 50, 255)
 
+BALLE_PERDUE = pygame.event.Event(pygame.USEREVENT, {'quoi': 'balle_perdue'})
+
 class Brique:
     def __init__(self, x, y, largeur, hauteur):
         self.x = x
@@ -18,7 +20,7 @@ class Brique:
         if not self.est_cassee:
             pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
 
-    def reagit_rebond_balle(self, balle):
+    def reagis_rebond_balle(self, balle):
         if self.est_cassee:
             return 1, 1
 
@@ -43,18 +45,18 @@ class MurDeBriques:
         for i in range(nombre_x):
             for j in range(nombre_y):
                 self.briques.append(
-                    Brique(x0 + (largeur_une_brique + espacement) * i,
-                           y0 + (hauteur_une_brique + espacement) * j,
-                           largeur_une_brique,
-                           hauteur_une_brique))
+                    Brique(x0 + largeur_une_brique * i,
+                           y0 + hauteur_une_brique * j,
+                           (largeur_une_brique - espacement),
+                           (hauteur_une_brique - espacement)))
 
     def dessine_toi(self, fenetre):
         for brique in self.briques:
             brique.dessine_toi(fenetre)
 
-    def reagit_rebond_balle(self, balle):
+    def reagis_rebond_balle(self, balle):
         for brique in self.briques:
-            cvx, cvy = brique.reagit_rebond_balle(balle)
+            cvx, cvy = brique.reagis_rebond_balle(balle)
             if cvx != 1 or cvy !=1:
                 return cvx, cvy
 
@@ -67,7 +69,7 @@ class Balle:
         self.x_precedent = self.x
         self.y_precedent = self.y
         self.vx = 0.2
-        self.vy = -0.4
+        self.vy = 0.4
         self.rayon = 10
 
     def dessine_toi(self, fenetre):
@@ -81,7 +83,7 @@ class Balle:
         self.y += self.vy*dt
 
         for objet in objets_rebond:
-            cvx, cvy = objet.reagit_rebond_balle(self)
+            cvx, cvy = objet.reagis_rebond_balle(self)
             self.vx *= cvx
             self.vy *= cvy
 
@@ -97,7 +99,7 @@ class Raquette:
     def dessine_toi(self, fenetre):
         pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x - self.largeur, self.y, self.largeur, 10])
 
-    def reagit_rebond_balle(self, balle):
+    def reagis_rebond_balle(self, balle):
         if balle.y < self.y:
             return 1, 1
 
@@ -126,14 +128,14 @@ class Terrain:
         self.largeur = largeur
         self.hauteur = hauteur
 
-    def reagit_rebond_balle(self, balle):
+    def reagis_rebond_balle(self, balle):
         cvx = -1 if balle.x > self.largeur or balle.x < self.x0 else 1
         cvy = -1 if balle.y < self.x0 else 1
 
         if balle.y > self.hauteur:
-            balle.y = 300 # todo: implémenter balle sortie
+            pygame.event.post(BALLE_PERDUE)
 
-        return  cvx, cvy
+        return cvx, cvy
 
     def dessine_toi(self, fenetre):
         pass # todo: dessiner
@@ -149,15 +151,21 @@ class MoteurDeJeu(object):
         pygame.display.set_caption(titre)
         self.horloge = pygame.time.Clock()
 
-    def fais_ton_travail(self, la_balle:Balle, la_raquette:Raquette, les_objets_de_rebond:[]):
+    def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[]):
         le_jeu_tourne = True
+
+        la_balle = Balle(le_terrain.largeur / 2, le_terrain.hauteur/ 2)
 
         while le_jeu_tourne:
             dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
             tous_les_evenements = pygame.event.get()
 
             for evenement in tous_les_evenements:
-                if evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
+                if evenement.type == pygame.USEREVENT:
+                    if evenement.quoi == 'balle_perdue':
+                        la_balle = Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2)
+
+                elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                     pygame.quit()
                     quit()
 
@@ -184,14 +192,13 @@ def boucle_de_jeu():
 
     le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
 
-    la_balle = Balle(largeur_fenetre / 2, hauteur_fenetre / 2)
     le_terrain = Terrain(0, 0, largeur_fenetre, hauteur_fenetre)
-    le_mur_de_briques = MurDeBriques(0, 0, 12, 4, 50, 30)
+    le_mur_de_briques = MurDeBriques(0, 50, 12, 4, largeur_fenetre/12, 30)
     la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
     les_objets_de_rebond = [le_terrain, le_mur_de_briques, la_raquette]
 
-    le_moteur.fais_ton_travail(la_balle, la_raquette, les_objets_de_rebond)
+    le_moteur.fais_ton_travail(le_terrain, la_raquette, les_objets_de_rebond)
 
 if __name__ == '__main__':
     boucle_de_jeu()
