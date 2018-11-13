@@ -8,6 +8,9 @@ COULEUR_BLANC = (255, 255, 255)
 COULEUR_NOIR = (0, 0, 0)
 COULEUR_BLEUE = (50, 50, 255)
 
+def envoie_evenement(quoi, qui):
+    pygame.event.post(Event(USEREVENT, {'quoi': quoi, 'qui': qui}))
+
 class Brique:
     def __init__(self, x, y, largeur, hauteur):
         self.x = x
@@ -39,7 +42,7 @@ class Brique:
         self.est_cassee = True
 
         if self.balle:
-            pygame.event.post(Event(USEREVENT, {'quoi': 'balle_gagnée', 'qui' : self.balle}))
+            envoie_evenement('balle_gagnée', self.balle)
 
         # Cherchons par quel côté elle est rentrée
         cvx = -1 if self.x > balle.x_precedent or self.x1 < balle.x_precedent else 1
@@ -142,7 +145,7 @@ class Terrain:
         cvy = -1 if balle.y < self.x0 else 1
 
         if balle.y > self.hauteur:
-            pygame.event.post(Event(USEREVENT, {'quoi': 'balle_perdue', 'qui' : balle}))
+            envoie_evenement('balle_perdue', balle)
 
         return cvx, cvy
 
