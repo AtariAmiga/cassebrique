@@ -1,3 +1,5 @@
+from random import random
+
 import pygame
 from pygame.constants import USEREVENT
 from pygame.event import Event
@@ -16,9 +18,13 @@ class Brique:
         self.hauteur = hauteur
         self.est_cassee = False
 
+        self.balle = Balle((self.x + self.x1)/2, (self.y + self.y1)/2) if int(random()*10) == 1 else None
+
     def dessine_toi(self, fenetre):
         if not self.est_cassee:
             pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
+            if self.balle:
+                self.balle.dessine_toi(fenetre)
 
     def reagis_rebond_balle(self, balle):
         if self.est_cassee:
@@ -29,8 +35,11 @@ class Brique:
             or balle.y < self.y or self.y1 < balle.y:
             return 1, 1
 
-        # Si la balle est dans la brique
+        # Si la balle est rentrée dans la brique
         self.est_cassee = True
+
+        if self.balle:
+            pygame.event.post(Event(USEREVENT, {'quoi': 'balle_gagnée', 'qui' : self.balle}))
 
         # Cherchons par quel côté elle est rentrée
         cvx = -1 if self.x > balle.x_precedent or self.x1 < balle.x_precedent else 1
@@ -154,7 +163,7 @@ class MoteurDeJeu(object):
     def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[]):
         le_jeu_tourne = True
 
-        les_balles = [ Balle(le_terrain.largeur / 2, le_terrain.hauteur/ 2), ]
+        les_balles = [ Balle(le_terrain.largeur / 4, le_terrain.hauteur/ 2), ]
 
         while le_jeu_tourne:
             dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
@@ -162,9 +171,13 @@ class MoteurDeJeu(object):
 
             for evenement in tous_les_evenements:
                 if evenement.type == pygame.USEREVENT:
-                    if evenement.quoi == 'balle_perdue':
+                    if evenement.quoi == 'balle_gagnée':
+                        les_balles.append(evenement.qui)
+
+                    elif evenement.quoi == 'balle_perdue':
                         les_balles.remove(evenement.qui)
-                        les_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
+                        if len(les_balles) == 0:
+                            les_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
 
                 elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                     pygame.quit()
