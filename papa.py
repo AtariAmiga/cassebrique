@@ -7,6 +7,7 @@ from pygame.event import Event
 COULEUR_BLANC = (255, 255, 255)
 COULEUR_NOIR = (0, 0, 0)
 COULEUR_BLEUE = (50, 50, 255)
+COULEUR_ROUGE = (255, 50, 50)
 
 def envoie_evenement(quoi, qui):
     pygame.event.post(Event(USEREVENT, {'quoi': quoi, 'qui': qui}))
@@ -19,18 +20,19 @@ class Brique:
         self.y1 = y + hauteur
         self.largeur = largeur
         self.hauteur = hauteur
-        self.est_cassee = False
+        self.armure_restante = 1 + int(random()*2)
 
         self.balle = Balle((self.x + self.x1)/2, (self.y + self.y1)/2) if int(random()*10) == 1 else None
 
     def dessine_toi(self, fenetre):
-        if not self.est_cassee:
-            pygame.draw.rect(fenetre, COULEUR_BLEUE, [self.x, self.y, self.largeur, self.hauteur])
+        if self.armure_restante > 0:
+            couleur = COULEUR_BLEUE if self.armure_restante == 1 else COULEUR_ROUGE
+            pygame.draw.rect(fenetre, couleur, [self.x, self.y, self.largeur, self.hauteur])
             if self.balle:
                 self.balle.dessine_toi(fenetre)
 
     def reagis_rebond_balle(self, balle):
-        if self.est_cassee:
+        if self.armure_restante == 0:
             return 1, 1
 
         # Si la balle n'est pas arrivée dans la brique
@@ -39,9 +41,9 @@ class Brique:
             return 1, 1
 
         # Si la balle est rentrée dans la brique
-        self.est_cassee = True
+        self.armure_restante -= 1
 
-        if self.balle:
+        if self.armure_restante == 0 and self.balle is not None:
             envoie_evenement('balle_gagnée', self.balle)
 
         # Cherchons par quel côté elle est rentrée
