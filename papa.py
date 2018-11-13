@@ -1,10 +1,10 @@
 import pygame
+from pygame.constants import USEREVENT
+from pygame.event import Event
 
 COULEUR_BLANC = (255, 255, 255)
 COULEUR_NOIR = (0, 0, 0)
 COULEUR_BLEUE = (50, 50, 255)
-
-BALLE_PERDUE = pygame.event.Event(pygame.USEREVENT, {'quoi': 'balle_perdue'})
 
 class Brique:
     def __init__(self, x, y, largeur, hauteur):
@@ -77,7 +77,7 @@ class Balle:
 
     def bouge(self, dt, objets_rebond:[]):
         self.x_precedent = self.x
-        self.y_precedent += self.y
+        self.y_precedent = self.y
 
         self.x += self.vx*dt
         self.y += self.vy*dt
@@ -133,7 +133,7 @@ class Terrain:
         cvy = -1 if balle.y < self.x0 else 1
 
         if balle.y > self.hauteur:
-            pygame.event.post(BALLE_PERDUE)
+            pygame.event.post(Event(USEREVENT, {'quoi': 'balle_perdue', 'qui' : balle}))
 
         return cvx, cvy
 
@@ -154,7 +154,7 @@ class MoteurDeJeu(object):
     def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[]):
         le_jeu_tourne = True
 
-        la_balle = Balle(le_terrain.largeur / 2, le_terrain.hauteur/ 2)
+        les_balles = [ Balle(le_terrain.largeur / 2, le_terrain.hauteur/ 2), ]
 
         while le_jeu_tourne:
             dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
@@ -163,7 +163,8 @@ class MoteurDeJeu(object):
             for evenement in tous_les_evenements:
                 if evenement.type == pygame.USEREVENT:
                     if evenement.quoi == 'balle_perdue':
-                        la_balle = Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2)
+                        les_balles.remove(evenement.qui)
+                        les_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
 
                 elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                     pygame.quit()
@@ -177,9 +178,10 @@ class MoteurDeJeu(object):
 
             la_raquette.bouge(dt)
 
-            la_balle.bouge(dt, les_objets_de_rebond)
+            for balle in les_balles:
+                balle.bouge(dt, les_objets_de_rebond)
+                balle.dessine_toi(fenetre=self.fenetre)
 
-            la_balle.dessine_toi(fenetre=self.fenetre)
             for un_objet in les_objets_de_rebond:
                 un_objet.dessine_toi(fenetre=self.fenetre)
 
