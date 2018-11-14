@@ -142,10 +142,12 @@ class Terrain:
         self.x0 = x0
         self.largeur = largeur
         self.hauteur = hauteur
+        self.epaisseur = 5
+
 
     def reagis_rebond_balle(self, balle):
-        cvx = -1 if balle.x > self.largeur or balle.x < self.x0 else 1
-        cvy = -1 if balle.y < self.y0 else 1
+        cvx = -1 if balle.x < (self.x0 + self.epaisseur) or (self.largeur - self.epaisseur) < balle.x else 1
+        cvy = -1 if balle.y < (self.y0 + self.epaisseur) else 1
 
         if balle.y > self.hauteur:
             envoie_evenement('balle_perdue', balle)
@@ -153,10 +155,9 @@ class Terrain:
         return cvx, cvy
 
     def dessine_toi(self, fenetre):
-        epaisseur = 5
-        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, epaisseur, self.hauteur])
-        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.largeur, epaisseur])
-        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0 + self.largeur - epaisseur, self.y0, epaisseur, self.hauteur])
+        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.epaisseur, self.hauteur])
+        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.largeur, self.epaisseur])
+        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0 + self.largeur - self.epaisseur, self.y0, self.epaisseur, self.hauteur])
 
 
 class MoteurDeJeu(object):
