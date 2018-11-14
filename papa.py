@@ -3,6 +3,7 @@ from random import random
 import pygame
 from pygame.constants import USEREVENT
 from pygame.event import Event
+from pygame import gfxdraw
 
 COULEUR_BLANC = (255, 255, 255)
 COULEUR_NOIR = (0, 0, 0)
@@ -169,10 +170,11 @@ class Compteur(object):
         self.largeur = largeur
         self.hauteur = hauteur
 
-        self.balles_restantes = 5
+        self.balles_total = 5
+        self.balles_restantes = self.balles_total
         self.score = 0
 
-        self.myfont = pygame.font.SysFont("monospace", 15)
+        self.myfont = pygame.font.SysFont("monospace", 25, bold=True)
 
     def comptabilise_points_gagnes(self, nombre_de_points):
         self.score += nombre_de_points
@@ -182,8 +184,19 @@ class Compteur(object):
         return self.balles_restantes > 0
 
     def dessine_toi(self, fenetre):
-        label = self.myfont.render("Balles restantes: " + str(self.balles_restantes) + " Score: " + str(self.score), 1, COULEUR_NOIR)
-        fenetre.blit(label, (0, 0))
+        # todo: nettoyer
+        label = self.myfont.render(str(self.score), 1, COULEUR_NOIR)
+        width, h = label.get_size()
+        fenetre.blit(label, (self.largeur - width, self.hauteur/2 - h/2))
+
+        rayon = 10
+        y = rayon
+        for num_balle in range(self.balles_total):
+            x = (num_balle + 1)*(2*rayon + 2)
+            pygame.gfxdraw.aacircle(fenetre, x, y, rayon, COULEUR_NOIR)
+            if num_balle < self.balles_restantes:
+                pygame.gfxdraw.filled_circle(fenetre, x, y, rayon, COULEUR_NOIR)
+
 
 
 class MoteurDeJeu(object):
