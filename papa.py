@@ -8,6 +8,7 @@ COULEUR_BLANC = (255, 255, 255)
 COULEUR_NOIR = (0, 0, 0)
 COULEUR_BLEUE = (50, 50, 255)
 COULEUR_ROUGE = (255, 50, 50)
+COULEUR_VERT = (50, 255, 50)
 
 def envoie_evenement(quoi, qui):
     pygame.event.post(Event(USEREVENT, {'quoi': quoi, 'qui': qui}))
@@ -144,7 +145,7 @@ class Terrain:
 
     def reagis_rebond_balle(self, balle):
         cvx = -1 if balle.x > self.largeur or balle.x < self.x0 else 1
-        cvy = -1 if balle.y < self.x0 else 1
+        cvy = -1 if balle.y < self.y0 else 1
 
         if balle.y > self.hauteur:
             envoie_evenement('balle_perdue', balle)
@@ -152,7 +153,10 @@ class Terrain:
         return cvx, cvy
 
     def dessine_toi(self, fenetre):
-        pass # todo: dessiner
+        epaisseur = 5
+        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, epaisseur, self.hauteur])
+        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.largeur, epaisseur])
+        pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0 + self.largeur - epaisseur, self.y0, epaisseur, self.hauteur])
 
 
 class MoteurDeJeu(object):
@@ -165,7 +169,7 @@ class MoteurDeJeu(object):
         pygame.display.set_caption(titre)
         self.horloge = pygame.time.Clock()
 
-    def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[]):
+    def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[], l_afficheur):
         le_jeu_tourne = True
 
         les_balles = [ Balle(le_terrain.largeur / 4, le_terrain.hauteur/ 2), ]
@@ -193,6 +197,7 @@ class MoteurDeJeu(object):
 
             self.fenetre.fill(COULEUR_BLANC)
 
+            l_afficheur.dessine_toi(fenetre=self.fenetre)
 
             la_raquette.bouge(dt)
 
@@ -206,19 +211,37 @@ class MoteurDeJeu(object):
             pygame.display.update()
 
 
+class Compteur(object):
+    def __init__(self, x0, y0, largeur, hauteur):
+        self.x0 = x0
+        self.y0 = y0
+        self.largeur = largeur
+        self.hauteur = hauteur
+
+        self.balles_restantes = 5
+        self.score = 0
+
+        self.myfont = pygame.font.SysFont("monospace", 15)
+
+    def dessine_toi(self, fenetre):
+        label = self.myfont.render("Balles restantes: " + str(self.balles_restantes) + " Score: " + str(self.score), 1, COULEUR_NOIR)
+        fenetre.blit(label, (0, 0))
+
+
 def boucle_de_jeu():
     largeur_fenetre = 800
     hauteur_fenetre = 600
 
     le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
 
-    le_terrain = Terrain(0, 0, largeur_fenetre, hauteur_fenetre)
-    le_mur_de_briques = MurDeBriques(0, 50, 12, 4, largeur_fenetre/12, 30)
+    l_afficheur = Compteur(0, 0, largeur_fenetre, 30)
+    le_terrain = Terrain(0, 30, largeur_fenetre, hauteur_fenetre)
+    le_mur_de_briques = MurDeBriques(0, 80, 12, 4, largeur_fenetre/12, 30)
     la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
     les_objets_de_rebond = [le_terrain, le_mur_de_briques, la_raquette]
 
-    le_moteur.fais_ton_travail(le_terrain, la_raquette, les_objets_de_rebond)
+    le_moteur.fais_ton_travail(le_terrain, la_raquette, les_objets_de_rebond, l_afficheur)
 
 if __name__ == '__main__':
     boucle_de_jeu()
