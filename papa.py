@@ -10,8 +10,8 @@ COULEUR_BLEUE = (50, 50, 255)
 COULEUR_ROUGE = (255, 50, 50)
 COULEUR_VERT = (50, 255, 50)
 
-def envoie_evenement(quoi, qui):
-    pygame.event.post(Event(USEREVENT, {'quoi': quoi, 'qui': qui}))
+def envoie_evenement(quoi, nom_parametre, valeur_parametre):
+    pygame.event.post(Event(USEREVENT, {'quoi': quoi, nom_parametre: valeur_parametre}))
 
 class Brique:
     def __init__(self, x, y, largeur, hauteur):
@@ -42,10 +42,11 @@ class Brique:
             return 1, 1
 
         # Si la balle est rentrée dans la brique
+        envoie_evenement('points_gagnés', 'combien', 10)
         self.armure_restante -= 1
 
         if self.armure_restante == 0 and self.balle is not None:
-            envoie_evenement('balle_gagnée', self.balle)
+            envoie_evenement('balle_gagnée', 'balle', self.balle)
 
         # Cherchons par quel côté elle est rentrée
         cvx = -1 if self.x > balle.x_precedent or self.x1 < balle.x_precedent else 1
@@ -119,6 +120,7 @@ class Raquette:
             return 1, 1
 
         if (self.x - self.largeur) <= balle.x and balle.x <= self.x:
+            envoie_evenement('points_gagnés', 'combien', 1)
             return 1, -1
 
         return 1, 1
@@ -150,7 +152,7 @@ class Terrain:
         cvy = -1 if balle.y < (self.y0 + self.epaisseur) else 1
 
         if balle.y > self.hauteur:
-            envoie_evenement('balle_perdue', balle)
+            envoie_evenement('balle_perdue', 'balle', balle)
 
         return cvx, cvy
 
@@ -158,58 +160,6 @@ class Terrain:
         pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.epaisseur, self.hauteur])
         pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.largeur, self.epaisseur])
         pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0 + self.largeur - self.epaisseur, self.y0, self.epaisseur, self.hauteur])
-
-
-class MoteurDeJeu(object):
-    def __init__(self, titre, largeur_fenetre, hauteur_fenetre):
-        pygame.init()
-
-        self.FPS = 120
-
-        self.fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
-        pygame.display.set_caption(titre)
-        self.horloge = pygame.time.Clock()
-
-    def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[], l_afficheur):
-        le_jeu_tourne = True
-
-        les_balles = [ Balle(le_terrain.largeur / 4, le_terrain.hauteur/ 2), ]
-
-        while le_jeu_tourne:
-            dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
-            tous_les_evenements = pygame.event.get()
-
-            for evenement in tous_les_evenements:
-                if evenement.type == pygame.USEREVENT:
-                    if evenement.quoi == 'balle_gagnée':
-                        les_balles.append(evenement.qui)
-
-                    elif evenement.quoi == 'balle_perdue':
-                        les_balles.remove(evenement.qui)
-                        if len(les_balles) == 0:
-                            les_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
-
-                elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
-                    pygame.quit()
-                    quit()
-
-                elif evenement.type in (pygame.KEYDOWN, pygame.KEYUP):
-                    la_raquette.reagit_au_clavier(evenement.type, evenement.key)
-
-            self.fenetre.fill(COULEUR_BLANC)
-
-            l_afficheur.dessine_toi(fenetre=self.fenetre)
-
-            la_raquette.bouge(dt)
-
-            for balle in les_balles:
-                balle.bouge(dt, les_objets_de_rebond)
-                balle.dessine_toi(fenetre=self.fenetre)
-
-            for un_objet in les_objets_de_rebond:
-                un_objet.dessine_toi(fenetre=self.fenetre)
-
-            pygame.display.update()
 
 
 class Compteur(object):
@@ -224,9 +174,72 @@ class Compteur(object):
 
         self.myfont = pygame.font.SysFont("monospace", 15)
 
+    def comptabilise_points_gagnes(self, nombre_de_points):
+        self.score += nombre_de_points
+
+    def comptabilise_balle_perdue(self):
+        self.balles_restantes -= 1
+        return self.balles_restantes > 0
+
     def dessine_toi(self, fenetre):
         label = self.myfont.render("Balles restantes: " + str(self.balles_restantes) + " Score: " + str(self.score), 1, COULEUR_NOIR)
         fenetre.blit(label, (0, 0))
+
+
+class MoteurDeJeu(object):
+    def __init__(self, titre, largeur_fenetre, hauteur_fenetre):
+        pygame.init()
+
+        self.FPS = 120
+
+        self.fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
+        pygame.display.set_caption(titre)
+        self.horloge = pygame.time.Clock()
+
+    def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[], le_compteur):
+        le_jeu_tourne = True
+
+        les_balles = [ Balle(le_terrain.largeur / 4, le_terrain.hauteur/ 2), ]
+
+        while le_jeu_tourne:
+            dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
+            tous_les_evenements = pygame.event.get()
+
+            for evenement in tous_les_evenements:
+                if evenement.type == pygame.USEREVENT:
+                    if evenement.quoi == 'balle_gagnée':
+                        les_balles.append(evenement.balle)
+
+                    elif evenement.quoi == 'balle_perdue':
+                        les_balles.remove(evenement.balle)
+                        if len(les_balles) == 0:
+                            if le_compteur.comptabilise_balle_perdue():
+                                les_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
+
+                    elif evenement.quoi == 'points_gagnés':
+                        le_compteur.comptabilise_points_gagnes(evenement.combien)
+
+                elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
+                    pygame.quit()
+                    quit()
+
+                elif evenement.type in (pygame.KEYDOWN, pygame.KEYUP):
+                    la_raquette.reagit_au_clavier(evenement.type, evenement.key)
+
+            self.fenetre.fill(COULEUR_BLANC)
+
+            le_compteur.dessine_toi(fenetre=self.fenetre)
+
+            la_raquette.bouge(dt)
+
+            for balle in les_balles:
+                balle.bouge(dt, les_objets_de_rebond)
+                balle.dessine_toi(fenetre=self.fenetre)
+
+            for un_objet in les_objets_de_rebond:
+                un_objet.dessine_toi(fenetre=self.fenetre)
+
+            pygame.display.update()
 
 
 def boucle_de_jeu():
@@ -235,14 +248,14 @@ def boucle_de_jeu():
 
     le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
 
-    l_afficheur = Compteur(0, 0, largeur_fenetre, 30)
+    le_compteur = Compteur(0, 0, largeur_fenetre, 30)
     le_terrain = Terrain(0, 30, largeur_fenetre, hauteur_fenetre)
     le_mur_de_briques = MurDeBriques(0, 80, 12, 4, largeur_fenetre/12, 30)
     la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
     les_objets_de_rebond = [le_terrain, le_mur_de_briques, la_raquette]
 
-    le_moteur.fais_ton_travail(le_terrain, la_raquette, les_objets_de_rebond, l_afficheur)
+    le_moteur.fais_ton_travail(le_terrain, la_raquette, les_objets_de_rebond, le_compteur)
 
 if __name__ == '__main__':
     boucle_de_jeu()
