@@ -11,8 +11,12 @@ COULEUR_BLEUE = (50, 50, 255)
 COULEUR_ROUGE = (255, 50, 50)
 COULEUR_VERT = (50, 255, 50)
 
-def envoie_evenement(quoi, nom_parametre, valeur_parametre):
-    pygame.event.post(Event(USEREVENT, {'quoi': quoi, nom_parametre: valeur_parametre}))
+
+def envoie_evenement(quoi, nom_parametre=None, valeur_parametre=None):
+    if nom_parametre is None or valeur_parametre is None:
+        pygame.event.post(Event(USEREVENT, {'quoi': quoi}))
+    else:
+        pygame.event.post(Event(USEREVENT, {'quoi': quoi, nom_parametre: valeur_parametre}))
 
 class Brique:
     def __init__(self, x, y, largeur, hauteur):
@@ -35,25 +39,29 @@ class Brique:
 
     def reagis_rebond_balle(self, balle):
         if self.armure_restante == 0:
-            return 1, 1
+            return 1, 1, False
 
         # Si la balle n'est pas arrivée dans la brique
         if balle.x < self.x or self.x1 < balle.x \
             or balle.y < self.y or self.y1 < balle.y:
-            return 1, 1
+            return 1, 1, False
 
         # Si la balle est rentrée dans la brique
         envoie_evenement('points_gagnés', 'combien', 10)
         self.armure_restante -= 1
 
-        if self.armure_restante == 0 and self.balle is not None:
-            envoie_evenement('balle_gagnée', 'balle', self.balle)
+        if self.armure_restante == 0:
+            brique_cassee = True
+            if self.balle is not None:
+                envoie_evenement('balle_gagnée', 'balle', self.balle)
+        else:
+            brique_cassee = False
 
         # Cherchons par quel côté elle est rentrée
         cvx = -1 if self.x > balle.x_precedent or self.x1 < balle.x_precedent else 1
         cvy = -1 if self.y > balle.y_precedent or self.y1 < balle.y_precedent else 1
 
-        return cvx, cvy
+        return cvx, cvy, brique_cassee
 
 class MurDeBriques:
     def __init__(self, x0, y0, nombre_x, nombre_y, largeur_une_brique, hauteur_une_brique):
@@ -73,7 +81,11 @@ class MurDeBriques:
 
     def reagis_rebond_balle(self, balle):
         for brique in self.briques:
-            cvx, cvy = brique.reagis_rebond_balle(balle)
+            cvx, cvy, brique_cassee = brique.reagis_rebond_balle(balle)
+            if brique_cassee:
+                self.briques.remove(brique)
+                if len(self.briques) == 0:
+                    envoie_evenement('partie_gagnee')
             if cvx != 1 or cvy !=1:
                 return cvx, cvy
 
@@ -212,7 +224,7 @@ class MoteurDeJeu(object):
     def fais_ton_travail(self, le_terrain:Terrain, la_raquette:Raquette, les_objets_de_rebond:[], le_compteur):
         le_jeu_tourne = True
 
-        les_balles = [ Balle(le_terrain.largeur / 4, le_terrain.hauteur/ 2), ]
+        liste_de_balles = [ Balle(le_terrain.largeur / 4, le_terrain.hauteur/ 2), ]
 
         while le_jeu_tourne:
             dt = self.horloge.tick(self.FPS) # Retourne combien de ms se sont écoulées depuis le dernier appel
@@ -221,16 +233,19 @@ class MoteurDeJeu(object):
             for evenement in tous_les_evenements:
                 if evenement.type == pygame.USEREVENT:
                     if evenement.quoi == 'balle_gagnée':
-                        les_balles.append(evenement.balle)
+                        liste_de_balles.append(evenement.balle)
 
                     elif evenement.quoi == 'balle_perdue':
-                        les_balles.remove(evenement.balle)
-                        if len(les_balles) == 0:
+                        liste_de_balles.remove(evenement.balle)
+                        if len(liste_de_balles) == 0:
                             if le_compteur.comptabilise_balle_perdue():
-                                les_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
+                                liste_de_balles.append( Balle(le_terrain.largeur / 2, le_terrain.hauteur / 2) )
 
                     elif evenement.quoi == 'points_gagnés':
                         le_compteur.comptabilise_points_gagnes(evenement.combien)
+
+                    elif evenement.quoi == 'partie_gagnée':
+                        pass
 
                 elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                     pygame.quit()
@@ -245,7 +260,7 @@ class MoteurDeJeu(object):
 
             la_raquette.bouge(dt)
 
-            for balle in les_balles:
+            for balle in liste_de_balles:
                 balle.bouge(dt, les_objets_de_rebond)
                 balle.dessine_toi(fenetre=self.fenetre)
 
