@@ -1,7 +1,8 @@
 from random import random
 
+import os.path
 import pygame
-import thorpy
+
 from pygame.constants import USEREVENT
 from pygame.event import Event
 from pygame import gfxdraw
@@ -12,7 +13,8 @@ COULEUR_BLEUE = (50, 50, 255)
 COULEUR_ROUGE = (255, 50, 50)
 COULEUR_VERT = (50, 255, 50)
 
-
+pygame.mixer.pre_init(44100, 16, 2, 4096)
+pygame.init()
 
 def envoie_evenement(quoi, nom_parametre=None, valeur_parametre=None):
     if nom_parametre is None or valeur_parametre is None:
@@ -95,6 +97,9 @@ class MurDeBriques:
         return 1, 1
 
 class Balle:
+    x = os.path.isfile('269718__michorvath__ping-pong-ball-hit.wav')
+    son_rebond = pygame.mixer.Sound('269718__michorvath__ping-pong-ball-hit.wav')
+
     def __init__(self, x0, y0):
         self.x = int(x0)
         self.y = int(y0)
@@ -116,6 +121,9 @@ class Balle:
 
         for objet in objets_rebond:
             cvx, cvy = objet.reagis_rebond_balle(self)
+            if cvx != 1 or cvy != 1:
+                self.son_rebond.play()
+
             self.vx *= cvx
             self.vy *= cvy
 
@@ -219,7 +227,6 @@ class Compteur(object):
 
 class MoteurDeJeu(object):
     def __init__(self, titre, largeur_fenetre, hauteur_fenetre):
-        pygame.init()
 
         self.FPS = 120
 
@@ -229,9 +236,9 @@ class MoteurDeJeu(object):
 
         self.le_compteur = Compteur(0, 0, largeur_fenetre, 30)
         self.le_terrain = Terrain(0, 30, largeur_fenetre, hauteur_fenetre)
-        self.nn = 1
+        self.niveau = 1
         x0, y0, largeur, hauteur = self.le_terrain.surface_disponible()
-        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.nn, nombre_y=1, largeur_une_brique=largeur/self.nn, hauteur_une_brique=30)
+        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.niveau, nombre_y=1, largeur_une_brique=largeur / self.niveau, hauteur_une_brique=30)
         self.la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
         self.les_objets_de_rebond = [self.le_terrain, self.le_mur_de_briques, self.la_raquette]
@@ -267,10 +274,10 @@ class MoteurDeJeu(object):
                         self.les_objets_qui_se_dessinent.remove(self.le_mur_de_briques)
 
                         x0, y0, largeur, hauteur = self.le_terrain.surface_disponible()
-                        self.nn += 1
+                        self.niveau += 1
 
-                        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.nn, nombre_y=1,
-                                                              largeur_une_brique=largeur/self.nn, hauteur_une_brique=30)
+                        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.niveau, nombre_y=1,
+                                                              largeur_une_brique=largeur/self.niveau, hauteur_une_brique=30)
 
                         self.les_objets_qui_se_dessinent.append(self.le_mur_de_briques)
                         self.les_objets_de_rebond.append(self.le_mur_de_briques)
@@ -298,9 +305,9 @@ class MoteurDeJeu(object):
             pygame.display.update()
 
 
-def boucle_de_jeu():
+def main():
     le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
     le_moteur.fais_ton_travail()
 
 if __name__ == '__main__':
-    boucle_de_jeu()
+    main()
