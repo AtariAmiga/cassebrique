@@ -87,6 +87,7 @@ class MurDeBriques:
             if brique_cassee:
                 self.briques.remove(brique)
                 if len(self.briques) == 0:
+                    envoie_evenement('points_gagnés', 'combien', 100)
                     envoie_evenement('partie_gagnée')
             if cvx != 1 or cvy !=1:
                 return cvx, cvy
@@ -176,6 +177,9 @@ class Terrain:
         pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0, self.y0, self.largeur, self.epaisseur])
         pygame.draw.rect(fenetre, COULEUR_VERT, [self.x0 + self.largeur - self.epaisseur, self.y0, self.epaisseur, self.hauteur])
 
+    def surface_disponible(self):
+        return self.x0 + self.epaisseur, self.y0 + self.epaisseur, self.largeur - self.epaisseur, self.hauteur - self.largeur
+
 
 class Compteur(object):
     def __init__(self, x0, y0, largeur, hauteur):
@@ -225,11 +229,14 @@ class MoteurDeJeu(object):
 
         self.le_compteur = Compteur(0, 0, largeur_fenetre, 30)
         self.le_terrain = Terrain(0, 30, largeur_fenetre, hauteur_fenetre)
-        nn = 1
-        self.le_mur_de_briques = MurDeBriques(x0=0, y0=80, nombre_x=nn, nombre_y=1, largeur_une_brique=largeur_fenetre/nn, hauteur_une_brique=30)
+        self.nn = 1
+        x0, y0, largeur, hauteur = self.le_terrain.surface_disponible()
+        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.nn, nombre_y=1, largeur_une_brique=largeur/self.nn, hauteur_une_brique=30)
         self.la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
         self.les_objets_de_rebond = [self.le_terrain, self.le_mur_de_briques, self.la_raquette]
+        self.les_objets_qui_se_dessinent = [self.le_terrain, self.le_mur_de_briques, self.la_raquette, self.le_compteur]
+        self.les_objets_qui_bougent = [self.la_raquette, ]
 
 
     def fais_ton_travail(self):
@@ -256,7 +263,17 @@ class MoteurDeJeu(object):
                         self.le_compteur.comptabilise_points_gagnes(evenement.combien)
 
                     elif evenement.quoi == 'partie_gagnée':
-                        le_jeu_tourne = False
+                        self.les_objets_de_rebond.remove(self.le_mur_de_briques)
+                        self.les_objets_qui_se_dessinent.remove(self.le_mur_de_briques)
+
+                        x0, y0, largeur, hauteur = self.le_terrain.surface_disponible()
+                        self.nn += 1
+
+                        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.nn, nombre_y=1,
+                                                              largeur_une_brique=largeur/self.nn, hauteur_une_brique=30)
+
+                        self.les_objets_qui_se_dessinent.append(self.le_mur_de_briques)
+                        self.les_objets_de_rebond.append(self.le_mur_de_briques)
 
                 elif evenement.type == pygame.QUIT: # C'est le bouton X sur la fenêtre
                     pygame.quit()
@@ -275,7 +292,7 @@ class MoteurDeJeu(object):
                 balle.bouge(dt, self.les_objets_de_rebond)
                 balle.dessine_toi(fenetre=self.fenetre)
 
-            for un_objet in self.les_objets_de_rebond:
+            for un_objet in self.les_objets_qui_se_dessinent:
                 un_objet.dessine_toi(fenetre=self.fenetre)
 
             pygame.display.update()
