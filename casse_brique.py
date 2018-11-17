@@ -10,6 +10,8 @@ class Terrain(object):
         self.largeur = largeur
         self.hauteur = hauteur
 
+    def reagis_a_la_balle(self, une_balle):
+        return 1, 1
 
 class Balle(object):
     def __init__(self):
@@ -27,6 +29,10 @@ class Balle(object):
         dt = 1
         self.x = self.x + self.vx*dt
         self.y = self.y + self.vy*dt
+
+        cvx, cvy = terrain.reagis_a_la_balle(self)
+        self.vx *= cvx
+        self.vy *= cvy
 
         pass
 
