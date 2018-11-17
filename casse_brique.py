@@ -3,6 +3,9 @@ COULEUR_NOIR = (0, 0, 0)
 COULEUR_GRIS_FONCE = (70, 70, 70)
 COULEUR_BLANC = (255, 255, 255)
 
+pygame.mixer.pre_init(44100, 16, 2, 4096)
+pygame.init()
+
 class Terrain(object):
     def __init__(self, x, y, l, h):
         self.x0 = x
@@ -20,6 +23,8 @@ class Terrain(object):
         return cvx, cvy
 
 class Balle(object):
+    son_rebond = pygame.mixer.Sound('269718__michorvath__ping-pong-ball-hit.wav')
+
     def __init__(self):
         self.x = 50
         self.y = 60
@@ -28,7 +33,7 @@ class Balle(object):
         self.rayon = 10
 
     def dessine_toi(self, fenetre):
-        pygame.draw.circle(fenetre, COULEUR_GRIS_FONCE, [self.x, self.y], self.rayon)
+        pygame.draw.circle(fenetre, COULEUR_GRIS_FONCE, [int(self.x), int(self.y)], self.rayon)
         pass
 
     def bouge(self, terrain):
@@ -37,6 +42,10 @@ class Balle(object):
         self.y = self.y + self.vy*dt
 
         cvx, cvy = terrain.reagis_a_la_balle(self)
+
+        if cvx == -1 or cvy == -1:
+            self.son_rebond.play()
+
         self.vx *= cvx
         self.vy *= cvy
 
@@ -44,8 +53,6 @@ class Balle(object):
 
 class MoteurDeJeu(object):
     def __init__(self, titre, largeur_fenetre, hauteur_fenetre):
-        pygame.init()
-
         self.FPS = 120
 
         self.fenetre = pygame.display.set_mode((largeur_fenetre, hauteur_fenetre))
