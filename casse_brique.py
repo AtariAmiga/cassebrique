@@ -4,14 +4,20 @@ COULEUR_GRIS_FONCE = (70, 70, 70)
 COULEUR_BLANC = (255, 255, 255)
 
 class Terrain(object):
-    def __init__(self, x0, y0, largeur, hauteur ):
-        self.x0 = x0
-        self.y0 = y0
-        self.largeur = largeur
-        self.hauteur = hauteur
+    def __init__(self, x, y, l, h):
+        self.x0 = x
+        self.y0 = y
+        self.largeur = l
+        self.hauteur = h
 
     def reagis_a_la_balle(self, une_balle):
-        return 1, 1
+        x1 = self.x0 + self.largeur
+        y1 = self.y0 + self.hauteur
+
+        cvx = -1 if une_balle.x < self.x0 or x1 < une_balle.x else 1
+        cvy = -1 if une_balle.y < self.y0 or y1 < une_balle.y else 1
+
+        return cvx, cvy
 
 class Balle(object):
     def __init__(self):
@@ -67,7 +73,7 @@ class MoteurDeJeu(object):
 def boucle_de_jeu():
     le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
 
-    le_terrain = Terrain(x0=0, y0=0, largeur=800, hauteur=600)
+    le_terrain = Terrain(x=0, y=0, l=800, h=600)
     la_balle = Balle()
 
     le_moteur.fait_ton_travail(le_terrain, la_balle)
