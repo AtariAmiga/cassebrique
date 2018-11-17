@@ -1,5 +1,6 @@
 import pygame
 COULEUR_NOIR = (0, 0, 0)
+COULEUR_GRIS_FONCE = (70, 70, 70)
 COULEUR_BLANC = (255, 255, 255)
 
 class Terrain(object):
@@ -19,7 +20,7 @@ class Balle(object):
         self.rayon = 10
 
     def dessine_toi(self, fenetre):
-        pygame.draw.circle(fenetre, COULEUR_NOIR, [self.x, self.y], self.rayon)
+        pygame.draw.circle(fenetre, COULEUR_GRIS_FONCE, [self.x, self.y], self.rayon)
         pass
 
     def bouge(self, terrain):
