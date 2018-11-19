@@ -32,7 +32,7 @@ class Brique:
         self.hauteur = hauteur
         self.armure_restante = 1 + int(random()*2)
 
-        self.balle = Balle((self.x + self.x1)/2, (self.y + self.y1)/2) if int(random()*10) == 1 else None
+        self.balle = Balle((self.x + self.x1)/2, (self.y + self.y1)/2) if int(random()*3) == 1 else None
 
     def dessine_toi(self, fenetre):
         if self.armure_restante > 0:
@@ -97,22 +97,34 @@ class MurDeBriques:
         return 1, 1
 
 class Balle:
-    x = os.path.isfile('269718__michorvath__ping-pong-ball-hit.wav')
     son_rebond = pygame.mixer.Sound('269718__michorvath__ping-pong-ball-hit.wav')
+    temps_avant_demarrage_balle = 2000 # en millisecondes
 
     def __init__(self, x0, y0):
+        self.existe_depuis = 0
+
         self.x = int(x0)
         self.y = int(y0)
         self.x_precedent = self.x
         self.y_precedent = self.y
-        self.vx = 0.2
-        self.vy = 0.4
+        self.vx = 0.15
+        self.vy = 0.3
         self.rayon = 10
 
     def dessine_toi(self, fenetre):
-        pygame.draw.circle(fenetre, COULEUR_NOIR, [int(self.x), int(self.y)], self.rayon)
+        pygame.gfxdraw.aacircle(fenetre, int(self.x), int(self.y), self.rayon, COULEUR_NOIR)
+        if self.existe_depuis > self.temps_avant_demarrage_balle:
+            pygame.draw.circle(fenetre, COULEUR_NOIR, [int(self.x), int(self.y)], self.rayon)
+        else:
+            c = int(255 * (1 - self.existe_depuis / self.temps_avant_demarrage_balle))
+            pygame.draw.circle(fenetre, (c, c, c), [int(self.x), int(self.y)], self.rayon)
 
     def bouge(self, dt, objets_rebond:[]):
+        self.existe_depuis += dt
+
+        if self.existe_depuis <= self.temps_avant_demarrage_balle:
+            return
+
         self.x_precedent = self.x
         self.y_precedent = self.y
 
@@ -236,9 +248,9 @@ class MoteurDeJeu(object):
 
         self.le_compteur = Compteur(0, 0, largeur_fenetre, 30)
         self.le_terrain = Terrain(0, 30, largeur_fenetre, hauteur_fenetre)
-        self.niveau = 1
+        self.niveau = 7
         x0, y0, largeur, hauteur = self.le_terrain.surface_disponible()
-        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.niveau, nombre_y=1, largeur_une_brique=largeur / self.niveau, hauteur_une_brique=30)
+        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.niveau, nombre_y=3, largeur_une_brique=largeur / self.niveau, hauteur_une_brique=30)
         self.la_raquette = Raquette(largeur=largeur_fenetre/5, largeur_fenetre=largeur_fenetre, hauteur_fenetre=hauteur_fenetre)
 
         self.les_objets_de_rebond = [self.le_terrain, self.le_mur_de_briques, self.la_raquette]
@@ -274,9 +286,9 @@ class MoteurDeJeu(object):
                         self.les_objets_qui_se_dessinent.remove(self.le_mur_de_briques)
 
                         x0, y0, largeur, hauteur = self.le_terrain.surface_disponible()
-                        self.niveau += 1
+                        #self.niveau += 1
 
-                        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.niveau, nombre_y=1,
+                        self.le_mur_de_briques = MurDeBriques(x0=x0, y0=y0 + 80, nombre_x=self.niveau, nombre_y=3,
                                                               largeur_une_brique=largeur/self.niveau, hauteur_une_brique=30)
 
                         self.les_objets_qui_se_dessinent.append(self.le_mur_de_briques)
@@ -306,7 +318,7 @@ class MoteurDeJeu(object):
 
 
 def main():
-    le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 600)
+    le_moteur = MoteurDeJeu('Casse brique', largeur_fenetre = 800, hauteur_fenetre = 1000)
     le_moteur.fais_ton_travail()
 
 if __name__ == '__main__':
