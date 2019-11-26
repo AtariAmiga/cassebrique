@@ -1,3 +1,6 @@
+# cassebrique
+Casse brique en Python à visée éducative
+
 # Configuration
 ## IntelliJ & venv...
 - IntelliJ → Project Structure → Project SDK → New → Python Virtual Environment
