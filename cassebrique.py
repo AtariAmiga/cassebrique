@@ -1,3 +1,5 @@
+# Version en cours réalisée par enfant
+
 import pygame
 COULEUR_NOIR = (0, 0, 0)
 COULEUR_GRIS_FONCE = (70, 70, 70)

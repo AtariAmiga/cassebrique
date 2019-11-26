@@ -1,3 +1,6 @@
+# Cette version est plus avancée que celle définie dans casse_brique.py
+# car papa y prépare les prochaines étapes que enfant va tenter de réaliser.
+
 from random import random
 
 import os.path
